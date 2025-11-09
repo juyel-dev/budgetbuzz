@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.app {
+  @apply min-h-screen bg-gray-50 pb-16;
+}
+
+.main-content {
+  @apply container mx-auto px-4 py-6;
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+  @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16;
+}
+
+.nav-item {
+  @apply flex flex-col items-center justify-center p-2 text-gray-600;
+}
+
+.nav-item.active {
+  @apply text-blue-600;
+}
+
+.nav-icon {
+  @apply w-6 h-6;
+}
+
+/* Floating Search */
+.floating-search {
+  @apply fixed bottom-20 right-4 left-4 bg-white p-3 rounded-lg shadow-lg border border-gray-200;
+}
+
+/* Post Cards */
+.post-card {
+  @apply bg-white rounded-lg shadow-md p-4 mb-4 border border-gray-200;
+}
