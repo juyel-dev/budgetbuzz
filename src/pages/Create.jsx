@@ -1,6 +1,8 @@
 import React from 'react';
+import { useAuth } from '../hooks/useAuth';
+import ProtectedRoute from '../components/ProtectedRoute';
 
-const Create = () => {
+const CreateContent = () => {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Create Post</h1>
@@ -8,6 +10,14 @@ const Create = () => {
         ✨ Create amazing deals here!
       </div>
     </div>
+  );
+};
+
+const Create = () => {
+  return (
+    <ProtectedRoute>
+      <CreateContent />
+    </ProtectedRoute>
   );
 };
 
