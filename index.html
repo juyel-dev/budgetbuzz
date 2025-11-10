@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BudgetBuzz</title>
+  <script type="module" src="https://www.gstatic.com/firebasejs/12.5.0/firebase-app-compat.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/12.5.0/firebase-auth-compat.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore-compat.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: #f3f4f6; }
+    .container { max-width: 600px; margin: 0 auto; padding: 1rem; }
+    .card { background: white; padding: 1rem; margin: 1rem 0; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    input, textarea, button { width: 100%; padding: 0.75rem; margin: 0.5rem 0; border: 1px solid #ddd; border-radius: 8px; }
+    button { background: #6366f1; color: white; font-weight: bold; cursor: pointer; }
+    .nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; padding: 0.5rem 0; }
+    .nav a { text-decoration: none; color: #6366f1; font-size: 0.9rem; text-align: center; }
+    img { max-width: 100%; border-radius: 8px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1 style="text-align:center; color:#6366f1;">BudgetBuzz</h1>
+    <div id="auth">
+      <button onclick="googleLogin()">Login with Google</button>
+    </div>
+    <div id="app" style="display:none;">
+      <div id="feed"></div>
+      <button onclick="showCreate()">+ Create Deal</button>
+    </div>
+  </div>
+
+  <div class="nav">
+    <a href="#" onclick="showPage('home')">Home</a>
+    <a href="#" onclick="showPage('create')">Create</a>
+    <a href="#" onclick="showPage('profile')">You</a>
+  </div>
+
+  <!-- Create Modal -->
+  <div id="createModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); padding:1rem;">
+    <div class="card" style="max-width:500px; margin:2rem auto;">
+      <h2>Create Deal</h2>
+      <input type="file" id="image" accept="image/*" />
+      <textarea id="caption" placeholder="boAt Earbuds @ ₹999!"></textarea>
+      <input id="link" placeholder="Amazon/Flipkart Link" />
+      <button onclick="submitPost()">Post</button>
+      <button onclick="closeModal()" style="background:#ef4444;">Cancel</button>
+    </div>
+  </div>
+
+  <script type="module">
+    const firebaseConfig = {
+      apiKey: "AIzaSyCTxhvKFAu6ScaawI2od5EQness1XdYkfQ",
+      authDomain: "experiment-cb211.firebaseapp.com",
+      projectId: "experiment-cb211",
+      storageBucket: "experiment-cb211.firebasestorage.app",
+      messagingSenderId: "628634873457",
+      appId: "1:628634873457:web:7f0375f48b31cd685e35d0"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    let currentUser = null;
+
+    window.googleLogin = () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider);
+    };
+
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      if (user) {
+        document.getElementById('auth').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        loadPosts();
+      } else {
+        document.getElementById('auth').style.display = 'block';
+        document.getElementById('app').style.display = 'none';
+      }
+    });
+
+    window.showPage = (page) => {
+      if (page === 'create') showCreate();
+      if (page === 'home') loadPosts();
+    };
+
+    window.showCreate = () => {
+      document.getElementById('createModal').style.display = 'block';
+    };
+    window.closeModal = () => {
+      document.getElementById('createModal').style.display = 'none';
+    };
+
+    window.submitPost = async () => {
+      const file = document.getElementById('image').files[0];
+      const caption = document.getElementById('caption').value;
+      const link = document.getElementById('link').value;
+
+      if (!file || !caption || !link) return alert("Fill all fields");
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'budgetbuzz');
+
+      const res = await fetch('https://api.cloudinary.com/v1_1/duoz2bvcn/image/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+
+      await db.collection('posts').add({
+        caption,
+        affiliateLink: link,
+        image: data.secure_url,
+        submittedBy: currentUser.uid,
+        status: 'pending',
+        createdAt: new Date()
+      });
+
+      alert("Submitted!");
+      closeModal();
+      loadPosts();
+    };
+
+    window.loadPosts = async () => {
+      const snapshot = await db.collection('posts').where('status', '==', 'approved').get();
+      const feed = document.getElementById('feed');
+      feed.innerHTML = snapshot.empty ? '<p>No deals yet!</p>' : '';
+      snapshot.forEach(doc => {
+        const p = doc.data();
+        feed.innerHTML += `
+          <div class="card">
+            <img src="${p.image}" />
+            <p><strong>${p.caption}</strong></p>
+            <a href="${p.affiliateLink}" target="_blank" style="color:#6366f1;">Buy Now</a>
+          </div>
+        `;
+      });
+    };
+  </script>
+</body>
+</html>
